@@ -1,4 +1,7 @@
-import java.util.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Scanner;
 
 class Book {
     String title;
@@ -13,24 +16,27 @@ class Book {
 }
 
 public class Library {
-    static HashMap<Integer, Book> books = new HashMap<>();
+    static Book[] books = {
+        new Book("Python"),
+        new Book("Java"),
+        new Book("English"),
+        new Book("Done")
+    };
+
     static Scanner sc = new Scanner(System.in);
+    static SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 
     public static void main(String[] args) {
-        // Pre-loaded books
-        books.put(1, new Book("The Alchemist"));
-        books.put(2, new Book("Clean Code"));
-        books.put(3, new Book("The Pragmatic Programmer"));
-
         int choice;
         do {
             System.out.println("\nLibrary Menu:");
             System.out.println("1. View Books");
             System.out.println("2. Issue Book");
             System.out.println("3. Return Book");
-            System.out.println("0. Exit");
+            System.out.println("4. Exit");
             System.out.print("Enter choice: ");
             choice = sc.nextInt();
+            sc.nextLine();
 
             switch (choice) {
                 case 1:
@@ -53,61 +59,81 @@ public class Library {
 
     static void viewBooks() {
         System.out.println("\nAvailable Books:");
-        for (Map.Entry<Integer, Book> entry : books.entrySet()) {
-            Book b = entry.getValue();
-            String status = b.isIssued ? "Issued" : "Available";
-            System.out.println(entry.getKey() + ". " + b.title + " - " + status);
+        for (int i = 0; i < books.length; i++) {
+            Book b = books[i];
+            String status = b.isIssued ? "Issued on " + sdf.format(b.issueDate) : "Available";
+            System.out.println((i + 1) + ". " + b.title + " - " + status);
         }
     }
 
     static void issueBook() {
         viewBooks();
-        System.out.print("Enter book ID to issue: ");
+        System.out.print("Enter book number to issue: ");
         int id = sc.nextInt();
-        if (books.containsKey(id)) {
-            Book b = books.get(id);
+        sc.nextLine();
+
+        if (id >= 1 && id <= books.length) {
+            Book b = books[id - 1];
             if (!b.isIssued) {
-                b.isIssued = true;
-                b.issueDate = new Date();
-                System.out.println("Book issued successfully.");
+                System.out.print("Enter issue date (dd-MM-yyyy): ");
+                String dateStr = sc.nextLine();
+                try {
+                    Date issueDate = sdf.parse(dateStr);
+                    b.isIssued = true;
+                    b.issueDate = issueDate;
+                    System.out.println("Book issued successfully.");
+                } catch (ParseException e) {
+                    System.out.println("Invalid date format.");
+                }
             } else {
                 System.out.println("Book is already issued.");
             }
         } else {
-            System.out.println("Invalid book ID.");
+            System.out.println("Invalid book number.");
         }
     }
 
     static void returnBook() {
-        System.out.print("Enter book ID to return: ");
+        System.out.print("Enter book number to return: ");
         int id = sc.nextInt();
-        if (books.containsKey(id)) {
-            Book b = books.get(id);
+        sc.nextLine();
+
+        if (id >= 1 && id <= books.length) {
+            Book b = books[id - 1];
             if (b.isIssued) {
-                long diffInMillies = Math.abs(new Date().getTime() - b.issueDate.getTime());
-                long days = diffInMillies / (1000 * 60 * 60 * 24);
+                System.out.print("Enter return date (dd-MM-yyyy): ");
+                String returnDateStr = sc.nextLine();
+                try {
+                    Date returnDate = sdf.parse(returnDateStr);
+                    long diff = Math.abs(returnDate.getTime() - b.issueDate.getTime());
+                    long days = diff / (1000 * 60 * 60 * 24);
 
-                int fine = 0;
-                if (days > 7) {
-                    long extraDays = days - 7;
-                    long week = 1;
-                    while (extraDays > 0) {
-                        long fineDays = Math.min(extraDays, 7);
-                        fine += fineDays * week;
-                        extraDays -= fineDays;
-                        week++;
+                    int fine = 0;
+                    if (days > 7) {
+                        long extra = days - 7;
+                        long week = 1;
+                        while (extra > 0) {
+                            long fineDays = Math.min(extra, 7);
+                            fine += fineDays * week;
+                            extra -= fineDays;
+                            week++;
+                        }
                     }
-                }
 
-                b.isIssued = false;
-                b.issueDate = null;
-                System.out.println("Book returned successfully. Days borrowed: " + days);
-                System.out.println("Fine: ₹" + fine);
+                    b.isIssued = false;
+                    b.issueDate = null;
+
+                    System.out.println("Book returned successfully.");
+                    System.out.println("Days borrowed: " + days);
+                    System.out.println("Fine: ₹" + fine);
+                } catch (ParseException e) {
+                    System.out.println("Invalid date format.");
+                }
             } else {
                 System.out.println("Book is not currently issued.");
             }
         } else {
-            System.out.println("Invalid book ID.");
+            System.out.println("Invalid book number.");
         }
     }
 }
